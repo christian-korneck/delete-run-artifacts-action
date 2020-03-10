@@ -1,0 +1,33 @@
+name: init testrun
+on: [push]
+jobs:
+  create_dummy_artifacts:
+    runs-on: ubuntu-latest
+    name: create dummy artifacts
+    steps:
+      - name: create two dummy files
+        run: |
+          echo test > test1.txt
+          echo test2 > test2.txt
+      - name: upload dummy artifact 1
+        uses: actions/upload-artifact@v1
+        with:
+          name: test1
+          path: ./test1.txt
+      - name: upload dummy artifact 2
+        uses: actions/upload-artifact@v1
+        with:
+          name: test2
+          path: ./test2.txt      
+      # Use the output from the `hello` step
+  call_webhook:
+    needs: [create_dummy_artifacts]
+    runs-on: ubuntu-latest
+    name: call webhook
+    env:
+      FOR_WEBHOOKS_SECRET: ${{ secrets.FOR_WEBHOOKS_SECRET }} #requires preparation: create a personal access token (privs: "repo") and store it as a secret FOR_WEBHOOKS_SECRET in your github repo
+    steps:
+      - name: call webhook
+        run: |
+          echo "::add-mask::$FOR_WEBHOOKS_SECRET"
+          curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $FOR_WEBHOOKS_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"

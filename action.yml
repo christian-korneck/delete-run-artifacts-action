@@ -1,0 +1,15 @@
+name: 'delete-run-artifacts'
+description: 'github action to delete all artifacts at the end of a workflow run'
+inputs:
+  parent_repo:
+    description: 'the github repo that hosts the parent github workflow run'
+    required: true
+  parent_runid:
+    description: 'the id of the parent github workflow run whos artifacts should get deleted'
+    required: true
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+branding:
+  icon: 'trash-2'
+  color: 'green'

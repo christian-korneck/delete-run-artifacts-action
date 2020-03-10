@@ -1,0 +1,19 @@
+name: testrun
+on: repository_dispatch
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+    - name: git checkout
+      uses: actions/checkout@v2
+    - name: Delete artifacts
+      if: github.event.action == 'delete_all_artifacts'
+      uses: ./ #Uses an action in the root dir
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        parent_runid: ${{ github.event.client_payload.parent_runid  }}
+        parent_repo: ${{ github.event.client_payload.parent_repo }}
+
+
+
