@@ -44,25 +44,28 @@ jobs:
         parent_repo: ${{ github.event.client_payload.parent_repo }}
 ```
 
-and finally add the following job steps to your actual workflow (i.e. in `.github/workflows/workflow.yml`):
+and finally add the following cleanup job to your actual workflow (i.e. in `.github/workflows/workflow.yml`).
+Make sure that `needs:` points to your last job in the workflow, otherwise the cleanup might run too early.
 
 ```
 name: your workflow
 on: [push]
   your_last_job:
+    (... add your stuff here ...)
+  cleanup_job:
+    needs: [your_last_job]
+    if: always()
     runs-on: ubuntu-latest
-    name: your last job in the workflow chain
-    env:
-      FOR_WEBHOOKS_SECRET: ${{ secrets.FOR_WEBHOOKS_SECRET }}
     steps:
-      - # (... add your steps here ...)
-      - name: call webhook
-        run: |
-          echo "::add-mask::$FOR_WEBHOOKS_SECRET"
-          curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $FOR_WEBHOOKS_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"
+    - name: call webhook to delete artifacts
+      env:
+        FOR_WEBHOOKS_SECRET: ${{ secrets.FOR_WEBHOOKS_SECRET }}
+      run: |
+        echo "::add-mask::$FOR_WEBHOOKS_SECRET"
+        curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $FOR_WEBHOOKS_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"
 ```
 
-(Check this repo's `.github/workflow` dir for a working example)
+(Check [this repo](https://github.com/christian-korneck/captive) or the `.github/workflow` dir for a working example)
 
 # Reference
 
