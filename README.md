@@ -34,11 +34,9 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-    - name: git checkout
-      uses: actions/checkout@v2
     - name: Delete artifacts
       if: github.event.action == 'delete_all_artifacts'
-      uses: christian-korneck/delete-run-artifacts@v1
+      uses: christian-korneck/delete-run-artifacts-action@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
