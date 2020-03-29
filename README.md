@@ -65,6 +65,8 @@ on: [push]
         curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $FOR_WEBHOOKS_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"
 ```
 
+Please note: Due to a github [limitation](https://github.community/t5/GitHub-Actions/repository-dispatch-not-triggering-actions/m-p/33845#M1677), the file `.github/workflows/webhook_target.yml` needs to be always present in your `master` or default branch. The action will work with any branch however.   
+   
 (Check [this repo](https://github.com/christian-korneck/captive) or the `.github/workflow` dir for a working example)
 
 # Reference
