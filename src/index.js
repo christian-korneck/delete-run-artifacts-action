@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
-const core = require('@actions/core');
 const github = require('@actions/github');
+const core = require('@actions/core');
 
 async function listRunArtifacts(owner, repo, run_id, octokit) {
   const listWorkflowRunArtifactsResponse = await octokit.actions.listWorkflowRunArtifacts({
@@ -26,7 +26,7 @@ async function amain() {
   try {
     const parentRepo = core.getInput('parent_repo');
     const parent_runid = core.getInput('parent_runid');
-    const octokit = new github.GitHub(process.env.GITHUB_TOKEN);
+    const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
     const owner = parentRepo.split('/')[0];
     const repo = parentRepo.split('/')[1];
     const run_id = parent_runid;
