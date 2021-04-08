@@ -23,7 +23,8 @@
   "homepage": "https://github.com/christian-korneck/delete-run-artifacts-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "@actions/github": "^4.0.0"
+    "@actions/github": "^4.0.0",
+    "exponential-backoff": "^3.1.0"
   },
   "devDependencies": {
     "eslint": "^7.23.0",

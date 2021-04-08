@@ -7,18 +7,18 @@ jobs:
     steps:
       - name: create two dummy files
         run: |
-          echo test > test1.txt
-          echo test2 > test2.txt
+          dd if=/dev/random of=test1.dump bs=64M count=1
+          dd if=/dev/zero of=test2.dump bs=32M count=32 iflag=fullblock
       - name: upload dummy artifact 1
         uses: actions/upload-artifact@v1
         with:
           name: test1
-          path: ./test1.txt
+          path: ./test1.dump
       - name: upload dummy artifact 2
         uses: actions/upload-artifact@v1
         with:
           name: test2
-          path: ./test2.txt      
+          path: ./test2.dump      
       # Use the output from the `hello` step
   call_webhook:
     needs: [create_dummy_artifacts]

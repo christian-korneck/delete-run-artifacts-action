@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 const github = require('@actions/github');
 const core = require('@actions/core');
+const backoff = require('exponential-backoff');
 
 async function listRunArtifacts(owner, repo, run_id, octokit) {
   const listWorkflowRunArtifactsResponse = await octokit.actions.listWorkflowRunArtifacts({
@@ -9,6 +10,19 @@ async function listRunArtifacts(owner, repo, run_id, octokit) {
     run_id
   });
   return listWorkflowRunArtifactsResponse.data.artifacts;
+}
+
+function NoArtifactsFoundErr() {
+  this.name = 'NoArtifactsFoundErr';
+  this.message = 'no artifacts found';
+}
+NoArtifactsFoundErr.prototype = Error.prototype;
+
+async function checkRunArtifactsCount(owner, repo, run_id, octokit) {
+  const artifacts = await listRunArtifacts(owner, repo, run_id, octokit);
+  if (artifacts.length < 1) {
+    throw new NoArtifactsFoundErr();
+  }
 }
 
 async function deleteArtifacts(owner, repo, artifact_id, octokit) {
@@ -22,7 +36,7 @@ async function deleteArtifacts(owner, repo, artifact_id, octokit) {
   /* eslint-enable no-console */
 }
 
-async function amain() {
+async function run() {
   try {
     const parentRepo = core.getInput('parent_repo');
     const parent_runid = core.getInput('parent_runid');
@@ -30,6 +44,25 @@ async function amain() {
     const owner = parentRepo.split('/')[0];
     const repo = parentRepo.split('/')[1];
     const run_id = parent_runid;
+    try {
+      // work around github caching issues: retry for ~4 mins if we don't see artifacts
+      await backoff.backOff(() => checkRunArtifactsCount(owner, repo, run_id, octokit), {
+        startingDelay: 1000,
+        delayFirstAttempt: false,
+        numOfAttempts: 9,
+        timeMultiple: 2
+      });
+    } catch (error) {
+      if (error.name === 'NoArtifactsFoundErr') {
+        /* eslint-disable no-console */
+        console.log('🎉 no artifacts found');
+        /* eslint-enable no-console */
+        return;
+      }
+      core.setFailed(error.message);
+      throw error;
+    }
+
     let artifacts = await listRunArtifacts(owner, repo, run_id, octokit);
     /* eslint-disable no-console */
     console.log(`artifacts before deletion: ${artifacts.length}`);
@@ -52,17 +85,35 @@ async function amain() {
       throw Error(`🛑 not all artifacts deleted (${artifacts.length} remaining)`);
     } else {
       /* eslint-disable no-console */
+      /*       if (Math.floor(Math.random() * 3) != 0) {
+              throw Error(`🛑 intentional test error`);
+            } */
       console.log('🎉 all artifacts deleted');
       /* eslint-enable no-console */
     }
   } catch (error) {
-    core.setFailed(error.message);
+    /* eslint-disable no-console */
+    console.log(`⚠️ error in run: ${error.message}`);
+    /* eslint-enable no-console */
+    throw error;
   }
 }
 
-try {
-  amain();
-} catch (error) {
-  core.setFailed(error.message);
+async function main() {
+  try {
+    // retry for up to 21 min
+    await backoff.backOff(() => run(), {
+      startingDelay: 10000,
+      delayFirstAttempt: false,
+      numOfAttempts: 8,
+      timeMultiple: 2
+    });
+  } catch (error) {
+    core.setFailed(error.message);
+    throw error;
+  }
 }
+
+main();
+
 /* eslint-enable camelcase */
