@@ -8,7 +8,7 @@ inputs:
     description: 'the id of the parent github workflow run whos artifacts should get deleted'
     required: true
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
 branding:
   icon: 'trash-2'
