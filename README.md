@@ -27,12 +27,14 @@ then store the token as a secret in the repo, so that the workflow can use it:
 
 then create a file in your repo `.github/workflows/webhook_target.yml` with:
 
-```
+```yaml
 name: delete calling job's artifacts
 on: repository_dispatch
 jobs:
   main:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write # this is needed as per default the GITHUB_TOKEN is denied deletion rights for anything action related (including the artifacts)
     steps:
     - name: Delete artifacts
       if: github.event.action == 'delete_all_artifacts'
@@ -47,7 +49,7 @@ jobs:
 and finally add the following cleanup job to your actual workflow (i.e. in `.github/workflows/workflow.yml`).
 Make sure that `needs:` points to your last job in the workflow, otherwise the cleanup might run too early.
 
-```
+```yaml
 name: your workflow
 on: [push]
   your_last_job:
